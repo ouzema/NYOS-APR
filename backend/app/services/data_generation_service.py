@@ -200,7 +200,7 @@ class PharmaceuticalDataGenerator:
                 
                 # Shift assignment
                 shift = random.choices(["Day", "Evening", "Night"], weights=[0.5, 0.35, 0.15])[0]
-                shift_hours = {"Day": (6, 13), "Evening": (14, 21), "Night": (22, 5)}
+                shift_hours = {"Day": (6, 13), "Evening": (14, 21), "Night": (22, 29)}
                 start_hour = random.randint(*shift_hours[shift]) % 24
                 
                 mfg_start = current_date.replace(hour=start_hour, minute=random.randint(0, 59))
