@@ -111,27 +111,27 @@ export default function Analytics() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Advanced Analytics</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Advanced Analytics</h2>
+          <p className="text-xs sm:text-sm text-gray-500">
             Detailed insights on {overview?.period?.years} years of data
           </p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
-        <nav className="flex gap-4">
+      <div className="border-b border-gray-200 overflow-x-auto">
+        <nav className="flex gap-2 sm:gap-4 min-w-max">
           {tabs.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 py-3 px-1 border-b-2 transition-colors ${
+              className={`flex items-center gap-1.5 sm:gap-2 py-3 px-1 border-b-2 transition-colors whitespace-nowrap text-sm sm:text-base ${
                 activeTab === tab.id
                   ? 'border-primary-600 text-primary-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <tab.icon size={18} />
+              <tab.icon size={16} />
               <span className="font-medium">{tab.label}</span>
             </button>
           ))}
@@ -140,9 +140,9 @@ export default function Analytics() {
 
       {/* Overview Tab */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Performance Radar */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-4">Overall Performance</h3>
             <ResponsiveContainer width="100%" height={300}>
               <RadarChart data={radarData}>
@@ -161,7 +161,7 @@ export default function Analytics() {
           </div>
 
           {/* Key Metrics */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-4">Key Metrics</h3>
             <div className="space-y-4">
               <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -210,23 +210,23 @@ export default function Analytics() {
 
       {/* Production Tab */}
       {activeTab === 'production' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Total production</p>
-              <p className="text-3xl font-bold text-gray-900">{overview?.production?.total_batches?.toLocaleString()}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{overview?.production?.total_batches?.toLocaleString()}</p>
               <p className="text-sm text-gray-400 mt-1">batches over {overview?.period?.years} years</p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Average yield</p>
-              <p className="text-3xl font-bold text-green-600">{overview?.production?.avg_yield}%</p>
+              <p className="text-2xl sm:text-3xl font-bold text-green-600">{overview?.production?.avg_yield}%</p>
               <p className="text-sm text-gray-400 mt-1">
                 Min: {overview?.production?.yield_range?.min}% | Max: {overview?.production?.yield_range?.max}%
               </p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Monthly production</p>
-              <p className="text-3xl font-bold text-gray-900">{overview?.production?.recent_batches}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{overview?.production?.recent_batches}</p>
               <p className="text-sm text-gray-400 mt-1">batches this month</p>
             </div>
           </div>
@@ -251,19 +251,19 @@ export default function Analytics() {
 
       {/* Suppliers Tab */}
       {activeTab === 'suppliers' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="space-y-4 sm:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Total suppliers</p>
-              <p className="text-3xl font-bold text-gray-900">{suppliers?.total_suppliers}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{suppliers?.total_suppliers}</p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">At-risk suppliers</p>
-              <p className="text-3xl font-bold text-red-600">{suppliers?.at_risk}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-red-600">{suppliers?.at_risk}</p>
             </div>
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
               <p className="text-sm text-gray-500 mb-1">Average approval rate</p>
-              <p className="text-3xl font-bold text-green-600">
+              <p className="text-2xl sm:text-3xl font-bold text-green-600">
                 {suppliers?.suppliers?.length > 0
                   ? (suppliers.suppliers.reduce((acc, s) => acc + s.approval_rate, 0) / suppliers.suppliers.length).toFixed(1)
                   : 0}%
@@ -272,10 +272,10 @@ export default function Analytics() {
           </div>
 
           {/* Supplier Table */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-4">Performance by Supplier</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto -mx-4 sm:mx-0">
+              <table className="w-full text-xs sm:text-sm min-w-[540px]">
                 <thead>
                   <tr className="border-b border-gray-200">
                     <th className="text-left py-3 font-medium text-gray-500">Supplier</th>
@@ -549,11 +549,11 @@ export default function Analytics() {
               </div>
 
               {/* Year-over-Year Changes Summary */}
-              <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 border border-primary-200">
-                <h3 className="font-semibold text-primary-900 mb-4">
+              <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-4 sm:p-6 border border-primary-200">
+                <h3 className="font-semibold text-primary-900 mb-4 text-sm sm:text-base">
                   {selectedYears[0]} → {selectedYears[selectedYears.length - 1]} Evolution Summary
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                   {(() => {
                     const first = yearly.years.find(y => y.year === selectedYears[0]) || {};
                     const last = yearly.years.find(y => y.year === selectedYears[selectedYears.length - 1]) || {};
@@ -581,7 +581,7 @@ export default function Analytics() {
                       },
                     ].map((item, i) => (
                       <div key={i} className="text-center">
-                        <p className={`text-2xl font-bold ${
+                        <p className={`text-xl sm:text-2xl font-bold ${
                           (item.positive ? parseFloat(item.change) >= 0 : parseFloat(item.change) <= 0) 
                             ? 'text-green-600' 
                             : 'text-red-600'

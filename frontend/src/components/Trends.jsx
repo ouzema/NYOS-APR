@@ -126,20 +126,21 @@ export default function Trends() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Trend Analysis</h2>
-          <p className="text-sm text-gray-500">Monitoring critical production parameters</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Trend Analysis</h2>
+          <p className="text-xs sm:text-sm text-gray-500">Monitoring critical production parameters</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <button
             onClick={() => setShowMultiParam(!showMultiParam)}
-            className={`flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+            className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg border transition-colors text-sm ${
               showMultiParam ? 'bg-primary-100 border-primary-300 text-primary-700' : 'bg-white border-gray-300 text-gray-600'
             }`}
           >
-            <Layers size={18} />
-            Multi-parameter
+            <Layers size={16} />
+            <span className="hidden sm:inline">Multi-parameter</span>
+            <span className="sm:hidden">Multi</span>
           </button>
           <button onClick={loadTrends} className="p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
             <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
@@ -204,25 +205,25 @@ export default function Trends() {
       )}
 
       {/* Main Chart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
           <div>
             <h3 className="font-semibold text-gray-900">
               {showMultiParam ? 'Multi-parameter Comparison' : mainParam?.label}
             </h3>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500">
               Last {days} days
               {mainData?.values?.length > 0 && ` - ${mainData.values.length} data points`}
             </p>
           </div>
-          
+
           {/* Stats */}
           {mainData && !mainData.error && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <StatBox label="Average" value={mainData.average} unit={mainParam?.unit} />
-              <StatBox 
-                label="Trend" 
-                value={mainData.trend_direction === 'hausse' ? '\u2191' : mainData.trend_direction === 'baisse' ? '\u2193' : '\u2192'} 
+              <StatBox
+                label="Trend"
+                value={mainData.trend_direction === 'hausse' ? '\u2191' : mainData.trend_direction === 'baisse' ? '\u2193' : '\u2192'}
                 color={mainData.alert ? 'yellow' : 'green'}
               />
             </div>
@@ -249,7 +250,7 @@ export default function Trends() {
             </div>
           </div>
         ) : (
-          <ResponsiveContainer width="100%" height={350}>
+          <ResponsiveContainer width="100%" height={280}>
             <ComposedChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
               <XAxis 
@@ -319,35 +320,35 @@ export default function Trends() {
 
       {/* Period Comparison */}
       {comparison && !comparison.error && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Activity size={20} /> Period Comparison
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500 mb-1">Batches produced</p>
-              <p className="text-2xl font-bold">{comparison.period1?.batches}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-500 mb-1">Batches produced</p>
+              <p className="text-xl sm:text-2xl font-bold">{comparison.period1?.batches}</p>
               <p className={`text-sm ${comparison.changes?.batches_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {comparison.changes?.batches_pct >= 0 ? '+' : ''}{comparison.changes?.batches_pct}% vs previous period
               </p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500 mb-1">Average yield</p>
-              <p className="text-2xl font-bold">{comparison.period1?.avg_yield}%</p>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-500 mb-1">Average yield</p>
+              <p className="text-xl sm:text-2xl font-bold">{comparison.period1?.avg_yield}%</p>
               <p className={`text-sm ${comparison.changes?.yield_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {comparison.changes?.yield_pct >= 0 ? '+' : ''}{comparison.changes?.yield_pct}%
               </p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500 mb-1">Average hardness</p>
-              <p className="text-2xl font-bold">{comparison.period1?.avg_hardness} kp</p>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-500 mb-1">Average hardness</p>
+              <p className="text-xl sm:text-2xl font-bold">{comparison.period1?.avg_hardness} kp</p>
               <p className={`text-sm ${comparison.changes?.hardness_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {comparison.changes?.hardness_pct >= 0 ? '+' : ''}{comparison.changes?.hardness_pct}%
               </p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-500 mb-1">Complaints</p>
-              <p className="text-2xl font-bold">{comparison.period1?.complaints}</p>
+            <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+              <p className="text-xs sm:text-sm text-gray-500 mb-1">Complaints</p>
+              <p className="text-xl sm:text-2xl font-bold">{comparison.period1?.complaints}</p>
               <p className={`text-sm ${comparison.changes?.complaints_pct <= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {comparison.changes?.complaints_pct >= 0 ? '+' : ''}{comparison.changes?.complaints_pct}%
               </p>
@@ -358,12 +359,12 @@ export default function Trends() {
 
       {/* Equipment Performance */}
       {equipment?.equipment?.length > 0 && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <Target size={20} /> Performance by Equipment
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+          <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2 text-sm sm:text-base">
+            <Target size={18} /> Performance by Equipment
           </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full text-xs sm:text-sm min-w-[420px]">
               <thead>
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-2 font-medium text-gray-500">Equipment</th>

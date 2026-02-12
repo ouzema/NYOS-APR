@@ -70,18 +70,18 @@ export default function DataUpload() {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">Data Import</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Data Import</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <div className="space-y-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <h3 className="font-semibold text-gray-900 mb-4">Data Type</h3>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               {dataTypes.map(type => (
                 <button
                   key={type.id}
                   onClick={() => setSelectedType(type.id)}
-                  className={`p-4 rounded-lg border-2 text-left transition-colors ${
+                  className={`p-3 sm:p-4 rounded-lg border-2 text-left transition-colors ${
                     selectedType === type.id
                       ? 'border-primary-500 bg-primary-50'
                       : 'border-gray-200 hover:border-gray-300'
@@ -98,7 +98,7 @@ export default function DataUpload() {
             onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
             onDragLeave={() => setDragActive(false)}
             onDrop={handleDrop}
-            className={`bg-white rounded-xl border-2 border-dashed p-8 text-center transition-colors ${
+            className={`bg-white rounded-xl border-2 border-dashed p-6 sm:p-8 text-center transition-colors ${
               dragActive ? 'border-primary-500 bg-primary-50' : 'border-gray-300'
             }`}
           >
@@ -148,7 +148,7 @@ export default function DataUpload() {
           )}
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
           <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <Clock size={18} />
             Import History

@@ -47,7 +47,7 @@ function QualityGauge({ score }) {
   return (
     <div className="flex flex-col items-center">
       <div className="relative">
-        <svg className="w-32 h-32 transform -rotate-90">
+        <svg className="w-24 h-24 sm:w-32 sm:h-32 transform -rotate-90">
           <circle cx="64" cy="64" r="45" stroke="#e5e7eb" strokeWidth="10" fill="none" />
           <circle 
             cx="64" cy="64" r="45" 
@@ -61,7 +61,7 @@ function QualityGauge({ score }) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-bold" style={{ color }}>{score}</span>
+          <span className="text-2xl sm:text-3xl font-bold" style={{ color }}>{score}</span>
           <span className="text-xs text-gray-500">/100</span>
         </div>
       </div>
@@ -85,7 +85,7 @@ function KPICard({ icon: Icon, label, value, trend, trendValue, color = 'blue', 
   
   return (
     <div 
-      className={`bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-shadow ${hasDetails ? 'cursor-pointer hover:border-primary-300' : ''}`}
+      className={`bg-white rounded-xl p-3 sm:p-5 border border-gray-200 hover:shadow-lg transition-shadow ${hasDetails ? 'cursor-pointer hover:border-primary-300' : ''}`}
       onClick={onClick}
     >
       <div className="flex items-start justify-between">
@@ -94,7 +94,7 @@ function KPICard({ icon: Icon, label, value, trend, trendValue, color = 'blue', 
             <p className="text-sm text-gray-500 mb-1">{label}</p>
             {hasDetails && <Info size={12} className="text-primary-400" />}
           </div>
-          <p className="text-2xl font-bold text-gray-900">{value}</p>
+          <p className="text-xl sm:text-2xl font-bold text-gray-900">{value}</p>
           {(trendValue !== undefined) && (
             <div className={`flex items-center gap-1 mt-1 text-sm ${trendColor}`}>
               <TrendIcon size={14} />
@@ -180,14 +180,14 @@ function DetailModal({ isOpen, onClose, title, children }) {
   
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h3 className="font-bold text-lg">{title}</h3>
+      <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] sm:max-h-[80vh] flex flex-col mx-2 sm:mx-auto">
+        <div className="p-3 sm:p-4 border-b flex items-center justify-between">
+          <h3 className="font-bold text-base sm:text-lg">{title}</h3>
           <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
             <X size={20} />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {children}
         </div>
       </div>
@@ -426,24 +426,24 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Quality Dashboard</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Quality Dashboard</h2>
+          <p className="text-xs sm:text-sm text-gray-500">
             Period: {analytics?.period?.start?.slice(0,10)} - {analytics?.period?.end?.slice(0,10)} ({analytics?.period?.years} years)
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={generateSummary} disabled={summaryLoading} className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
-            {summaryLoading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Zap size={18} />}
-            AI Summary
+        <div className="flex flex-wrap gap-2">
+          <button onClick={generateSummary} disabled={summaryLoading} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 transition-colors">
+            {summaryLoading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Zap size={16} />}
+            <span className="hidden sm:inline">AI</span> Summary
           </button>
-          <button onClick={() => setShowReportConfig(true)} disabled={aprStatus !== null} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
-            {aprStatus ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Download size={18} />}
-            APR PDF Report
+          <button onClick={() => setShowReportConfig(true)} disabled={aprStatus !== null} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+            {aprStatus ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Download size={16} />}
+            APR PDF
           </button>
-          <button onClick={() => setShowHistory(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
-            <History size={18} />
+          <button onClick={() => setShowHistory(true)} className="flex items-center gap-1.5 px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            <History size={16} />
             History ({reportHistory.length})
           </button>
         </div>
@@ -452,7 +452,7 @@ export default function Dashboard() {
       {/* Report Configuration Modal */}
       {showReportConfig && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+          <div className="bg-white rounded-xl w-full max-w-md p-4 sm:p-6 mx-2 sm:mx-auto">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-lg flex items-center gap-2">
                 <FileText size={20} className="text-green-600" /> Generate APR Report (PDF)
@@ -555,9 +555,9 @@ export default function Dashboard() {
       {/* Report History Modal */}
       {showHistory && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-bold text-lg flex items-center gap-2">
+          <div className="bg-white rounded-xl w-full max-w-2xl max-h-[85vh] sm:max-h-[80vh] flex flex-col mx-2 sm:mx-auto">
+            <div className="p-3 sm:p-4 border-b flex items-center justify-between">
+              <h3 className="font-bold text-base sm:text-lg flex items-center gap-2">
                 <History size={20} /> Report History
               </h3>
               <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-gray-100 rounded-lg">
@@ -624,7 +624,7 @@ export default function Dashboard() {
 
       {/* AI Summary */}
       {summary && (
-        <div className="bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-200 rounded-xl p-6">
+        <div className="bg-gradient-to-r from-primary-50 to-blue-50 border border-primary-200 rounded-xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-3">
             <h3 className="font-semibold text-primary-900 flex items-center gap-2">
               <Zap size={20} className="text-primary-600" /> AI Executive Summary
@@ -658,13 +658,13 @@ export default function Dashboard() {
       {/* Quality Score & Main KPIs */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
         {/* Quality Score */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200 flex flex-col items-center justify-center">
-          <h3 className="text-sm font-medium text-gray-500 mb-4">Overall Quality Score</h3>
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200 flex flex-col items-center justify-center">
+          <h3 className="text-sm font-medium text-gray-500 mb-3 sm:mb-4">Overall Quality Score</h3>
           <QualityGauge score={analytics?.quality?.quality_score || 0} />
         </div>
 
         {/* Main KPIs */}
-        <div className="lg:col-span-3 grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4">
           <KPICard 
             icon={Factory} 
             label="Batches Produced" 
@@ -730,7 +730,7 @@ export default function Dashboard() {
       >
         {selectedDetail === 'complaints' && detailData && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
               <div className="bg-red-50 p-3 rounded-lg text-center">
                 <p className="text-2xl font-bold text-red-600">{detailData.filter(c => c.status?.toLowerCase() === 'open').length}</p>
                 <p className="text-sm text-red-700">Open</p>
@@ -765,7 +765,7 @@ export default function Dashboard() {
         
         {selectedDetail === 'capas' && detailData && (
           <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
               <div className="bg-yellow-50 p-3 rounded-lg text-center">
                 <p className="text-2xl font-bold text-yellow-600">{detailData.filter(c => !c.status?.toLowerCase().includes('closed')).length}</p>
                 <p className="text-sm text-yellow-700">Open</p>
@@ -870,10 +870,10 @@ export default function Dashboard() {
       </DetailModal>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Yearly Trends */}
         {yearly?.years?.length > 0 && (
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-4">Annual Yield Evolution</h3>
             <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={yearly.years}>
@@ -889,7 +889,7 @@ export default function Dashboard() {
 
         {/* Complaints by Year */}
         {yearly?.years?.length > 0 && (
-          <div className="bg-white rounded-xl p-6 border border-gray-200">
+          <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
             <h3 className="font-semibold text-gray-900 mb-4">Complaints by Year</h3>
             <ResponsiveContainer width="100%" height={250}>
               <BarChart data={yearly.years}>
@@ -905,9 +905,9 @@ export default function Dashboard() {
       </div>
 
       {/* Drifts & Anomalies */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Drift Detection */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Drift Detection</h3>
             {drifts?.total_alerts > 0 && (
@@ -928,7 +928,7 @@ export default function Dashboard() {
         </div>
 
         {/* Recent Anomalies */}
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-semibold text-gray-900">Recent Anomalies</h3>
             <span className={`px-2 py-1 rounded-full text-sm ${
@@ -951,10 +951,10 @@ export default function Dashboard() {
 
       {/* Supplier Performance */}
       {suppliers?.suppliers?.length > 0 && (
-        <div className="bg-white rounded-xl p-6 border border-gray-200">
+        <div className="bg-white rounded-xl p-4 sm:p-6 border border-gray-200">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900 flex items-center gap-2">
-              <Truck size={20} /> Supplier Performance
+            <h3 className="font-semibold text-gray-900 flex items-center gap-2 text-sm sm:text-base">
+              <Truck size={18} /> Supplier Performance
             </h3>
             {suppliers.at_risk > 0 && (
               <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-sm">
@@ -962,26 +962,26 @@ export default function Dashboard() {
               </span>
             )}
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto -mx-4 sm:mx-0">
+            <table className="w-full text-xs sm:text-sm min-w-[480px]">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 font-medium text-gray-500">Supplier</th>
-                  <th className="text-center py-2 font-medium text-gray-500">Deliveries</th>
-                  <th className="text-center py-2 font-medium text-gray-500">Approved</th>
-                  <th className="text-center py-2 font-medium text-gray-500">Rejected</th>
-                  <th className="text-center py-2 font-medium text-gray-500">Rate</th>
-                  <th className="text-center py-2 font-medium text-gray-500">Status</th>
+                  <th className="text-left py-2 px-2 font-medium text-gray-500">Supplier</th>
+                  <th className="text-center py-2 px-1 font-medium text-gray-500">Deliveries</th>
+                  <th className="text-center py-2 px-1 font-medium text-gray-500 hidden sm:table-cell">Approved</th>
+                  <th className="text-center py-2 px-1 font-medium text-gray-500 hidden sm:table-cell">Rejected</th>
+                  <th className="text-center py-2 px-1 font-medium text-gray-500">Rate</th>
+                  <th className="text-center py-2 px-1 font-medium text-gray-500">Status</th>
                 </tr>
               </thead>
               <tbody>
                 {suppliers.suppliers.slice(0, 5).map((s, i) => (
                   <tr key={i} className="border-b border-gray-100">
-                    <td className="py-2 font-medium">{s.supplier_name || s.supplier_id}</td>
-                    <td className="text-center py-2">{s.total_deliveries}</td>
-                    <td className="text-center py-2 text-green-600">{s.approved}</td>
-                    <td className="text-center py-2 text-red-600">{s.rejected}</td>
-                    <td className="text-center py-2 font-medium">{s.approval_rate}%</td>
+                    <td className="py-2 px-2 font-medium truncate max-w-[120px]">{s.supplier_name || s.supplier_id}</td>
+                    <td className="text-center py-2 px-1">{s.total_deliveries}</td>
+                    <td className="text-center py-2 px-1 text-green-600 hidden sm:table-cell">{s.approved}</td>
+                    <td className="text-center py-2 px-1 text-red-600 hidden sm:table-cell">{s.rejected}</td>
+                    <td className="text-center py-2 px-1 font-medium">{s.approval_rate}%</td>
                     <td className="text-center py-2">
                       <span className={`px-2 py-1 rounded-full text-xs ${
                         s.status === 'good' ? 'bg-green-100 text-green-700' :
@@ -1002,20 +1002,20 @@ export default function Dashboard() {
       {/* Report Modal */}
       {showReport && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-bold text-lg">Full APR Report</h3>
-              <div className="flex gap-2">
-                <button onClick={downloadReport} className="flex items-center gap-1 px-3 py-1 bg-gray-100 rounded hover:bg-gray-200">
-                  <Download size={16} /> .md
+          <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] flex flex-col mx-2 sm:mx-auto">
+            <div className="p-3 sm:p-4 border-b flex items-center justify-between gap-2">
+              <h3 className="font-bold text-base sm:text-lg truncate">Full APR Report</h3>
+              <div className="flex gap-1 sm:gap-2 flex-shrink-0">
+                <button onClick={downloadReport} className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-gray-100 rounded hover:bg-gray-200 text-xs sm:text-sm">
+                  <Download size={14} /> <span className="hidden sm:inline">.md</span>
                 </button>
-                <button onClick={printReport} className="flex items-center gap-1 px-3 py-1 bg-primary-600 text-white rounded hover:bg-primary-700">
-                  <FileText size={16} /> PDF
+                <button onClick={printReport} className="flex items-center gap-1 px-2 sm:px-3 py-1 bg-primary-600 text-white rounded hover:bg-primary-700 text-xs sm:text-sm">
+                  <FileText size={14} /> PDF
                 </button>
-                <button onClick={() => setShowReport(false)} className="px-3 py-1 text-gray-500 hover:bg-gray-100 rounded">X</button>
+                <button onClick={() => setShowReport(false)} className="px-2 sm:px-3 py-1 text-gray-500 hover:bg-gray-100 rounded">X</button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6 prose max-w-none" dangerouslySetInnerHTML={{ __html: parseMarkdown(report) }} />
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 prose max-w-none text-sm sm:text-base" dangerouslySetInnerHTML={{ __html: parseMarkdown(report) }} />
           </div>
         </div>
       )}

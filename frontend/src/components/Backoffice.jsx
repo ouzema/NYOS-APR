@@ -165,14 +165,14 @@ export default function Backoffice() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-6 text-white">
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 sm:p-6 text-white">
         <div className="flex items-center gap-3">
-          <div className="bg-white/20 p-3 rounded-xl">
-            <Database className="w-8 h-8" />
+          <div className="bg-white/20 p-2 sm:p-3 rounded-xl">
+            <Database className="w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Data Generation Backoffice</h1>
-            <p className="text-indigo-100">Generate synthetic pharmaceutical CSV data for APR analysis</p>
+            <h1 className="text-xl sm:text-2xl font-bold">Data Generation</h1>
+            <p className="text-indigo-100 text-sm sm:text-base">Generate synthetic pharmaceutical CSV data</p>
           </div>
         </div>
       </div>
@@ -188,18 +188,18 @@ export default function Backoffice() {
         </div>
       )}
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column: Configuration */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Period Selection */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-indigo-600" />
               <h2 className="text-lg font-semibold">Period Selection</h2>
             </div>
 
             {/* Mode Tabs */}
-            <div className="flex gap-2 mb-4">
+            <div className="flex flex-wrap gap-2 mb-4">
               {[
                 { id: 'month', label: 'Single Month' },
                 { id: 'year', label: 'Full Year' },
@@ -220,7 +220,7 @@ export default function Backoffice() {
             </div>
 
             {/* Date Inputs */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {mode !== 'custom' && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
@@ -277,7 +277,7 @@ export default function Backoffice() {
           </div>
 
           {/* Data Types Selection */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Package className="w-5 h-5 text-indigo-600" />
@@ -300,7 +300,7 @@ export default function Backoffice() {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {dataTypes.map(type => (
                 <label
                   key={type.name}
@@ -327,13 +327,13 @@ export default function Backoffice() {
           </div>
 
           {/* Configuration */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
+          <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <Settings className="w-5 h-5 text-indigo-600" />
               <h2 className="text-lg font-semibold">Configuration</h2>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Batches per Day
@@ -361,11 +361,11 @@ export default function Backoffice() {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={handlePreview}
               disabled={loading || selectedTypes.length === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-white border-2 border-indigo-600 text-indigo-600 rounded-xl font-semibold hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Info className="w-5 h-5" />}
               Preview Generation
@@ -373,7 +373,7 @@ export default function Backoffice() {
             <button
               onClick={handleDownload}
               disabled={loading || selectedTypes.length === 0}
-              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 flex items-center justify-center gap-2 px-4 sm:px-6 py-3 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Archive className="w-5 h-5" />}
               Download ZIP
