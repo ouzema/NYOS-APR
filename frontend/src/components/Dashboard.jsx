@@ -3,7 +3,8 @@ import {
   Package, AlertTriangle, CheckCircle, Clock, FileWarning, Wrench, 
   TrendingUp, TrendingDown, FileText, Download, Activity, Target,
   AlertCircle, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Minus,
-  Factory, Users, Truck, Shield, ChevronDown, ChevronUp, X
+  Factory, Users, Truck, Shield, ChevronDown, ChevronUp, X, Calendar,
+  History, Eye, Trash2, Info
 } from 'lucide-react';
 import { api } from '../api';
 import { 
@@ -69,8 +70,8 @@ function QualityGauge({ score }) {
   );
 }
 
-// KPI Card with trend
-function KPICard({ icon: Icon, label, value, trend, trendValue, color = 'blue', subtext }) {
+// KPI Card with trend - now clickable for details
+function KPICard({ icon: Icon, label, value, trend, trendValue, color = 'blue', subtext, onClick, hasDetails = false }) {
   const colors = {
     blue: 'bg-blue-100 text-blue-600 border-blue-200',
     green: 'bg-green-100 text-green-600 border-green-200',
@@ -83,10 +84,16 @@ function KPICard({ icon: Icon, label, value, trend, trendValue, color = 'blue', 
   const trendColor = trend === 'up' ? 'text-green-500' : trend === 'down' ? 'text-red-500' : 'text-gray-400';
   
   return (
-    <div className="bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-shadow">
+    <div 
+      className={`bg-white rounded-xl p-5 border border-gray-200 hover:shadow-lg transition-shadow ${hasDetails ? 'cursor-pointer hover:border-primary-300' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-sm text-gray-500 mb-1">{label}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-gray-500 mb-1">{label}</p>
+            {hasDetails && <Info size={12} className="text-primary-400" />}
+          </div>
           <p className="text-2xl font-bold text-gray-900">{value}</p>
           {(trendValue !== undefined) && (
             <div className={`flex items-center gap-1 mt-1 text-sm ${trendColor}`}>
@@ -167,6 +174,27 @@ function AnomalyItem({ anomaly }) {
   );
 }
 
+// Detail Modal Component for KPI details
+function DetailModal({ isOpen, onClose, title, children }) {
+  if (!isOpen) return null;
+  
+  return (
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between">
+          <h3 className="font-bold text-lg">{title}</h3>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X size={20} />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [analytics, setAnalytics] = useState(null);
   const [drifts, setDrifts] = useState(null);
@@ -180,8 +208,35 @@ export default function Dashboard() {
   const [summaryMinimized, setSummaryMinimized] = useState(false);
   const [reportLoading, setReportLoading] = useState(false);
   const [showReport, setShowReport] = useState(false);
+  
+  // New states for enhanced features
+  const [showReportConfig, setShowReportConfig] = useState(false);
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [reportTitle, setReportTitle] = useState('');
+  const [reportHistory, setReportHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [selectedDetail, setSelectedDetail] = useState(null);
+  const [detailData, setDetailData] = useState(null);
+  
+  // APR PDF generation states
+  const [aprYear, setAprYear] = useState(2025);
+  const [aprStatus, setAprStatus] = useState(null); // 'generating', 'ready', 'downloading', null
+  const [aprMessage, setAprMessage] = useState('');
+  const [complaints, setComplaints] = useState([]);
+  const [capas, setCapas] = useState([]);
+  const [equipment, setEquipment] = useState(null);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData(); loadReportHistory(); }, []);
+
+  async function loadReportHistory() {
+    try {
+      const history = await api.getReportHistory();
+      setReportHistory(history);
+    } catch (e) {
+      console.error('Failed to load report history:', e);
+    }
+  }
 
   async function loadData() {
     setLoading(true);
@@ -218,11 +273,66 @@ export default function Dashboard() {
   async function generateReport() {
     setReportLoading(true);
     try {
-      const data = await api.getReport();
+      const data = await api.getReport(
+        reportStartDate || null,
+        reportEndDate || null,
+        reportTitle || null,
+        true
+      );
       setReport(data.report);
       setShowReport(true);
+      setShowReportConfig(false);
+      loadReportHistory(); // Refresh history
     } catch (e) { setReport("Error generating report."); }
     finally { setReportLoading(false); }
+  }
+
+  async function loadSavedReport(reportId) {
+    try {
+      const data = await api.getSavedReport(reportId);
+      setReport(data.content);
+      setShowReport(true);
+      setShowHistory(false);
+    } catch (e) {
+      console.error('Failed to load report:', e);
+    }
+  }
+
+  async function deleteReport(reportId) {
+    if (confirm('Delete this report?')) {
+      await api.deleteReport(reportId);
+      loadReportHistory();
+    }
+  }
+
+  // Load detail data for KPI clicks
+  async function loadDetailData(type) {
+    setSelectedDetail(type);
+    try {
+      switch (type) {
+        case 'complaints':
+          const complaintsData = await api.getComplaints();
+          setDetailData(complaintsData);
+          break;
+        case 'capas':
+          const capasData = await api.getCapas();
+          setDetailData(capasData);
+          break;
+        case 'equipment':
+          const equipData = await api.getEquipmentAnalysis();
+          setDetailData(equipData);
+          break;
+        case 'batches':
+          const batchesData = await api.getBatches(100);
+          setDetailData(batchesData);
+          break;
+        default:
+          setDetailData(null);
+      }
+    } catch (e) {
+      console.error('Failed to load detail:', e);
+      setDetailData(null);
+    }
   }
 
   function downloadReport() {
@@ -230,7 +340,8 @@ export default function Dashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'apr_report_nyos.md';
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.download = `apr_report_nyos_${dateStr}.md`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -240,6 +351,48 @@ export default function Dashboard() {
     printWindow.document.write(`<html><head><title>NYOS APR Report</title><style>body{font-family:Arial,sans-serif;padding:40px;max-width:800px;margin:0 auto}h1,h2,h3,h4{color:#1e40af}ul{margin-left:20px}</style></head><body>${parseMarkdown(report)}</body></html>`);
     printWindow.document.close();
     printWindow.print();
+  }
+
+  async function generateAPRPdf() {
+    setAprStatus('generating');
+    setAprMessage('Generating APR report with AI analysis...');
+    
+    try {
+      // First, generate the APR report
+      const result = await api.generateAPR(aprYear, false);
+      if (!result || result.status === 'failed') {
+        throw new Error(result?.error || 'Failed to generate APR');
+      }
+      
+      setAprMessage('APR generated! Preparing PDF with logo...');
+      setAprStatus('downloading');
+      
+      // Now download the PDF
+      const blob = await api.downloadAPRPdf(aprYear);
+      
+      // Trigger download
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `APR_${aprYear}_Paracetamol_500mg_NYOS.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      setAprStatus('ready');
+      setAprMessage('PDF downloaded successfully!');
+      setTimeout(() => {
+        setShowReportConfig(false);
+        setAprStatus(null);
+        setAprMessage('');
+      }, 2000);
+      
+    } catch (err) {
+      console.error('APR generation failed:', err);
+      setAprStatus(null);
+      setAprMessage(`Error: ${err.message}`);
+    }
   }
 
   if (loading) {
@@ -285,12 +438,174 @@ export default function Dashboard() {
             {summaryLoading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Zap size={18} />}
             AI Summary
           </button>
-          <button onClick={generateReport} disabled={reportLoading} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
-            {reportLoading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <FileText size={18} />}
-            APR Report
+          <button onClick={() => setShowReportConfig(true)} disabled={aprStatus !== null} className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors">
+            {aprStatus ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Download size={18} />}
+            APR PDF Report
+          </button>
+          <button onClick={() => setShowHistory(true)} className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors">
+            <History size={18} />
+            History ({reportHistory.length})
           </button>
         </div>
       </div>
+
+      {/* Report Configuration Modal */}
+      {showReportConfig && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-md w-full p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <FileText size={20} className="text-green-600" /> Generate APR Report (PDF)
+              </h3>
+              <button onClick={() => { setShowReportConfig(false); setAprStatus(null); setAprMessage(''); }} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Logo Preview */}
+              <div className="bg-gradient-to-r from-blue-900 to-blue-700 rounded-lg p-4 flex items-center gap-3">
+                <img src="/logo-icon.svg" alt="NYOS Logo" className="w-12 h-12 bg-white rounded-lg p-1" />
+                <div className="text-white">
+                  <div className="font-bold text-lg">NYOS PharmaCo Global</div>
+                  <div className="text-blue-200 text-sm">Annual Product Review</div>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Report Year</label>
+                <select
+                  value={aprYear}
+                  onChange={(e) => setAprYear(parseInt(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  disabled={aprStatus !== null}
+                >
+                  {[2020, 2021, 2022, 2023, 2024, 2025, 2026].map(y => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                <h4 className="font-medium text-blue-900 text-sm mb-2">PDF Report Includes:</h4>
+                <ul className="text-xs text-blue-700 space-y-1">
+                  <li>✓ Cover page with NYOS logo</li>
+                  <li>✓ Executive summary with KPIs</li>
+                  <li>✓ Production & quality analysis</li>
+                  <li>✓ Complaints & CAPA review</li>
+                  <li>✓ Equipment & stability status</li>
+                  <li>✓ Trend analysis & recommendations</li>
+                  <li>✓ Professional signature page</li>
+                </ul>
+              </div>
+              
+              {/* Status Messages */}
+              {aprMessage && (
+                <div className={`p-3 rounded-lg text-sm ${
+                  aprStatus === 'ready' ? 'bg-green-50 text-green-700 border border-green-200' :
+                  aprMessage.startsWith('Error') ? 'bg-red-50 text-red-700 border border-red-200' :
+                  'bg-blue-50 text-blue-700 border border-blue-200'
+                }`}>
+                  {aprStatus === 'generating' || aprStatus === 'downloading' ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                      {aprMessage}
+                    </span>
+                  ) : aprStatus === 'ready' ? (
+                    <span className="flex items-center gap-2">
+                      <CheckCircle size={16} />
+                      {aprMessage}
+                    </span>
+                  ) : (
+                    aprMessage
+                  )}
+                </div>
+              )}
+              
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => { setShowReportConfig(false); setAprStatus(null); setAprMessage(''); }}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                  disabled={aprStatus === 'generating' || aprStatus === 'downloading'}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={generateAPRPdf}
+                  disabled={aprStatus !== null}
+                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {aprStatus ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Download size={18} />
+                  )}
+                  {aprStatus ? 'Processing...' : 'Generate PDF'}
+                </button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center">
+                AI-powered analysis using data uploaded for the selected year
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Report History Modal */}
+      {showHistory && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <History size={20} /> Report History
+              </h3>
+              <button onClick={() => setShowHistory(false)} className="p-2 hover:bg-gray-100 rounded-lg">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-4">
+              {reportHistory.length === 0 ? (
+                <p className="text-gray-500 text-center py-8">No reports generated yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {reportHistory.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100">
+                      <div className="flex-1">
+                        <p className="font-medium">{r.title}</p>
+                        <p className="text-sm text-gray-500">
+                          {r.period_start && r.period_end 
+                            ? `${r.period_start.slice(0,10)} - ${r.period_end.slice(0,10)}`
+                            : 'All data'
+                          }
+                          {' • '}
+                          {new Date(r.generated_at).toLocaleDateString()}
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => loadSavedReport(r.id)}
+                          className="p-2 text-primary-600 hover:bg-primary-100 rounded-lg"
+                          title="View"
+                        >
+                          <Eye size={18} />
+                        </button>
+                        <button
+                          onClick={() => deleteReport(r.id)}
+                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg"
+                          title="Delete"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Critical Alert Banner */}
       {criticalIssues > 0 && (
@@ -356,6 +671,8 @@ export default function Dashboard() {
             value={analytics?.production?.total_batches?.toLocaleString() || 0}
             subtext={`${analytics?.production?.recent_batches || 0} this month`}
             color="blue"
+            hasDetails={true}
+            onClick={() => loadDetailData('batches')}
           />
           <KPICard 
             icon={Target} 
@@ -377,6 +694,8 @@ export default function Dashboard() {
             value={analytics?.compliance?.open_complaints || 0}
             subtext={`${analytics?.compliance?.critical_complaints || 0} critical`}
             color={analytics?.compliance?.open_complaints > 5 ? 'red' : 'yellow'}
+            hasDetails={true}
+            onClick={() => loadDetailData('complaints')}
           />
           <KPICard 
             icon={FileWarning} 
@@ -384,15 +703,171 @@ export default function Dashboard() {
             value={analytics?.compliance?.open_capas || 0}
             subtext={`${analytics?.compliance?.overdue_capas || 0} overdue`}
             color={analytics?.compliance?.overdue_capas > 0 ? 'red' : 'yellow'}
+            hasDetails={true}
+            onClick={() => loadDetailData('capas')}
           />
           <KPICard 
             icon={Wrench} 
             label="Calibrations OK" 
             value={`${analytics?.equipment?.calibration_pass_rate || 0}%`}
             color={analytics?.equipment?.failed_calibrations > 0 ? 'yellow' : 'green'}
+            hasDetails={true}
+            onClick={() => loadDetailData('equipment')}
           />
         </div>
       </div>
+
+      {/* Detail Modal for KPI clicks */}
+      <DetailModal
+        isOpen={selectedDetail !== null}
+        onClose={() => { setSelectedDetail(null); setDetailData(null); }}
+        title={
+          selectedDetail === 'complaints' ? 'Complaints Details' :
+          selectedDetail === 'capas' ? 'CAPAs Details' :
+          selectedDetail === 'equipment' ? 'Equipment Analysis' :
+          selectedDetail === 'batches' ? 'Recent Batches' : 'Details'
+        }
+      >
+        {selectedDetail === 'complaints' && detailData && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-red-600">{detailData.filter(c => c.status?.toLowerCase() === 'open').length}</p>
+                <p className="text-sm text-red-700">Open</p>
+              </div>
+              <div className="bg-yellow-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-yellow-600">{detailData.filter(c => c.severity?.toLowerCase() === 'critical').length}</p>
+                <p className="text-sm text-yellow-700">Critical</p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-green-600">{detailData.filter(c => c.status?.toLowerCase() === 'closed').length}</p>
+                <p className="text-sm text-green-700">Closed</p>
+              </div>
+            </div>
+            <div className="max-h-80 overflow-y-auto space-y-2">
+              {detailData.slice(0, 20).map((c, i) => (
+                <div key={i} className={`p-3 rounded-lg border ${c.status?.toLowerCase() === 'open' ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{c.complaint_id}</p>
+                      <p className="text-sm text-gray-600">{c.category} - {c.description?.slice(0, 100)}...</p>
+                      <p className="text-xs text-gray-400 mt-1">Batch: {c.batch_id} | {c.complaint_date?.slice(0,10)}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      c.severity?.toLowerCase() === 'critical' ? 'bg-red-200 text-red-700' : 'bg-yellow-200 text-yellow-700'
+                    }`}>{c.severity}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {selectedDetail === 'capas' && detailData && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div className="bg-yellow-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-yellow-600">{detailData.filter(c => !c.status?.toLowerCase().includes('closed')).length}</p>
+                <p className="text-sm text-yellow-700">Open</p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-red-600">{detailData.filter(c => c.status?.toLowerCase() === 'overdue').length}</p>
+                <p className="text-sm text-red-700">Overdue</p>
+              </div>
+              <div className="bg-green-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-green-600">{detailData.filter(c => c.status?.toLowerCase().includes('closed')).length}</p>
+                <p className="text-sm text-green-700">Closed</p>
+              </div>
+            </div>
+            <div className="max-h-80 overflow-y-auto space-y-2">
+              {detailData.slice(0, 20).map((c, i) => (
+                <div key={i} className={`p-3 rounded-lg border ${
+                  c.status?.toLowerCase() === 'overdue' ? 'bg-red-50 border-red-200' : 
+                  !c.status?.toLowerCase().includes('closed') ? 'bg-yellow-50 border-yellow-200' : 
+                  'bg-gray-50 border-gray-200'
+                }`}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="font-medium">{c.capa_id}</p>
+                      <p className="text-sm text-gray-600">{c.problem_statement?.slice(0, 100)}...</p>
+                      <p className="text-xs text-gray-400 mt-1">Source: {c.source} | Owner: {c.capa_owner}</p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      c.risk_score === 'Critical' ? 'bg-red-200 text-red-700' : 'bg-gray-200 text-gray-700'
+                    }`}>{c.risk_score}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {selectedDetail === 'equipment' && detailData && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-green-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-green-600">{detailData.pass_rate || 0}%</p>
+                <p className="text-sm text-green-700">Pass Rate</p>
+              </div>
+              <div className="bg-red-50 p-3 rounded-lg text-center">
+                <p className="text-2xl font-bold text-red-600">{detailData.failed_count || 0}</p>
+                <p className="text-sm text-red-700">Failed</p>
+              </div>
+            </div>
+            {detailData.by_type && (
+              <div>
+                <h4 className="font-medium mb-2">By Equipment Type</h4>
+                <div className="space-y-2">
+                  {Object.entries(detailData.by_type).map(([type, data]) => (
+                    <div key={type} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                      <span>{type}</span>
+                      <span className="font-medium">{data.count} calibrations</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {selectedDetail === 'batches' && detailData && (
+          <div className="space-y-4">
+            <p className="text-sm text-gray-500 mb-2">Recent {detailData.length} batches</p>
+            <div className="max-h-80 overflow-y-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left p-2">Batch ID</th>
+                    <th className="text-left p-2">Date</th>
+                    <th className="text-left p-2">Press</th>
+                    <th className="text-right p-2">Yield</th>
+                    <th className="text-right p-2">Hardness</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {detailData.slice(0, 30).map((b, i) => (
+                    <tr key={i} className="border-t border-gray-100">
+                      <td className="p-2 font-mono text-xs">{b.batch_id}</td>
+                      <td className="p-2">{b.manufacturing_date?.slice(0,10)}</td>
+                      <td className="p-2">{b.tablet_press_id}</td>
+                      <td className={`p-2 text-right ${b.yield_percent < 95 ? 'text-red-600' : 'text-green-600'}`}>
+                        {b.yield_percent?.toFixed(1)}%
+                      </td>
+                      <td className="p-2 text-right">{b.hardness?.toFixed(1)} kp</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        
+        {!detailData && (
+          <div className="flex items-center justify-center h-32">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          </div>
+        )}
+      </DetailModal>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

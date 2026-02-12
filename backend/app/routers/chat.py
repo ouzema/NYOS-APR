@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from app.db import get_db
@@ -9,6 +9,9 @@ from app.services.gemini_service import (
     generate_report,
 )
 from app import models
+from datetime import datetime
+from typing import Optional
+import json
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -86,9 +89,92 @@ async def get_summary_stream(db: Session = Depends(get_db)):
 
 
 @router.get("/report")
-async def get_report(db: Session = Depends(get_db)):
-    report = await generate_report(db)
-    return {"report": report}
+async def get_report(
+    db: Session = Depends(get_db),
+    start_date: Optional[str] = Query(None, description="Start date YYYY-MM-DD"),
+    end_date: Optional[str] = Query(None, description="End date YYYY-MM-DD"),
+    title: Optional[str] = Query(None, description="Custom report title"),
+    save: bool = Query(True, description="Save report to history")
+):
+    """Generate APR report with optional date range and save to history"""
+    
+    # Parse dates
+    start_dt = datetime.strptime(start_date, "%Y-%m-%d") if start_date else None
+    end_dt = datetime.strptime(end_date, "%Y-%m-%d") if end_date else None
+    
+    # Generate report
+    result = await generate_report(db, start_dt, end_dt, title)
+    
+    # Save to history if requested
+    if save and result.get("metadata"):
+        report_record = models.Report(
+            title=result["metadata"]["title"],
+            report_type="full_apr",
+            period_start=start_dt,
+            period_end=end_dt,
+            content=result["report"],
+            metadata_json=json.dumps(result["metadata"])
+        )
+        db.add(report_record)
+        db.commit()
+        db.refresh(report_record)
+        result["report_id"] = report_record.id
+    
+    return result
+
+
+@router.get("/reports/history")
+async def get_report_history(
+    db: Session = Depends(get_db),
+    limit: int = Query(20, description="Max number of reports to return")
+):
+    """Get report generation history"""
+    reports = (
+        db.query(models.Report)
+        .order_by(models.Report.generated_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
+            "id": r.id,
+            "title": r.title,
+            "report_type": r.report_type,
+            "period_start": r.period_start.isoformat() if r.period_start else None,
+            "period_end": r.period_end.isoformat() if r.period_end else None,
+            "generated_at": r.generated_at.isoformat() if r.generated_at else None,
+        }
+        for r in reports
+    ]
+
+
+@router.get("/reports/{report_id}")
+async def get_saved_report(report_id: int, db: Session = Depends(get_db)):
+    """Get a specific saved report"""
+    report = db.query(models.Report).filter(models.Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    
+    return {
+        "id": report.id,
+        "title": report.title,
+        "report_type": report.report_type,
+        "period_start": report.period_start.isoformat() if report.period_start else None,
+        "period_end": report.period_end.isoformat() if report.period_end else None,
+        "content": report.content,
+        "metadata": json.loads(report.metadata_json) if report.metadata_json else None,
+        "generated_at": report.generated_at.isoformat() if report.generated_at else None,
+    }
+
+
+@router.delete("/reports/{report_id}")
+async def delete_saved_report(report_id: int, db: Session = Depends(get_db)):
+    """Delete a saved report"""
+    report = db.query(models.Report).filter(models.Report.id == report_id).first()
+    if report:
+        db.delete(report)
+        db.commit()
+    return {"status": "deleted"}
 
 
 @router.get("/{conv_id}/history")

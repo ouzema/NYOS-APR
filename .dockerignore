@@ -1,0 +1,15 @@
+.git
+.venv
+.env
+node_modules
+apr_data
+__pycache__
+*.pyc
+.DS_Store
+.vscode
+.idea
+backend/.env
+backend/nohup.out
+backend/__pycache__
+frontend/node_modules
+*.sqlite3

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Activity, MessageSquare, Upload, BarChart3, AlertTriangle, CheckCircle, Clock, FileText, Layers } from 'lucide-react';
+import { Activity, MessageSquare, Upload, BarChart3, AlertTriangle, CheckCircle, Clock, FileText, Layers, Database } from 'lucide-react';
 import { api } from './api';
 import Dashboard from './components/Dashboard';
 import Chat from './components/Chat';
 import DataUpload from './components/DataUpload';
 import Trends from './components/Trends';
 import Analytics from './components/Analytics';
+import Backoffice from './components/Backoffice';
 
 const tabs = [
   { id: 'dashboard', label: 'Dashboard', icon: Activity },
@@ -13,6 +14,7 @@ const tabs = [
   { id: 'trends', label: 'Trends', icon: BarChart3 },
   { id: 'chat', label: 'AI Assistant', icon: MessageSquare },
   { id: 'upload', label: 'Import Data', icon: Upload },
+  { id: 'backoffice', label: 'Generate Data', icon: Database },
 ];
 
 export default function App() {
@@ -23,10 +25,8 @@ export default function App() {
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-white font-bold text-xl">N</span>
-              </div>
+            <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
+              <img src="/logo-icon.svg" alt="NYOS Logo" className="w-10 h-10" />
               <div>
                 <h1 className="text-xl font-bold text-gray-900">NYOS</h1>
                 <p className="text-xs text-gray-500">Pharmaceutical Quality Intelligence</p>
@@ -58,6 +58,7 @@ export default function App() {
         {activeTab === 'trends' && <Trends />}
         {activeTab === 'chat' && <Chat />}
         {activeTab === 'upload' && <DataUpload />}
+        {activeTab === 'backoffice' && <Backoffice />}
       </main>
       
       <footer className="border-t border-gray-200 py-4 mt-8">

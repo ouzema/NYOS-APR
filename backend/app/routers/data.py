@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app.db import get_db
 from app import models
 from app.schemas import DashboardStats, UploadResponse
 from app.services.gemini_service import analyze_trends
+from app.services.report_service import generate_file_report
 from datetime import datetime, timedelta
 import pandas as pd
 import io
@@ -192,6 +193,8 @@ async def upload_data(
     file: UploadFile = File(...),
     data_type: str = "batch",
     db: Session = Depends(get_db),
+    background_tasks: BackgroundTasks = None,
+    generate_report: bool = True,  # Auto-generate file report after upload
 ):
     if not file.filename.endswith(".csv"):
         raise HTTPException(
@@ -199,6 +202,8 @@ async def upload_data(
         )
 
     contents = await file.read()
+    # Store contents for report generation later
+    file_contents = contents
     df = pd.read_csv(io.StringIO(contents.decode("utf-8")))
     records_count = 0
 
@@ -567,12 +572,46 @@ async def upload_data(
     )
     db.add(upload_record)
     db.commit()
+    db.refresh(upload_record)  # Get the ID
+    
+    # Trigger file report generation in background
+    if generate_report and background_tasks:
+        background_tasks.add_task(
+            trigger_file_report_generation,
+            file_contents,
+            file.filename,
+            data_type,
+            upload_record.id
+        )
 
     return UploadResponse(
         filename=file.filename,
         records_imported=records_count,
         data_type=data_type,
     )
+
+
+async def trigger_file_report_generation(
+    file_contents: bytes,
+    filename: str,
+    data_type: str,
+    uploaded_file_id: int
+):
+    """Background task to generate file report after upload"""
+    from app.db import SessionLocal
+    db = SessionLocal()
+    try:
+        await generate_file_report(
+            db, 
+            file_contents, 
+            filename, 
+            data_type, 
+            uploaded_file_id
+        )
+    except Exception as e:
+        print(f"Error generating file report for {filename}: {e}")
+    finally:
+        db.close()
 
 
 @router.get("/uploads")

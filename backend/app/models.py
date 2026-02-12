@@ -287,3 +287,100 @@ class UploadedFile(Base):
     data_type = Column(String(50))
     records_count = Column(Integer)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+
+class Report(Base):
+    """Saved APR reports history"""
+
+    __tablename__ = "reports"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255))
+    report_type = Column(String(50))  # full_apr, summary, custom
+    period_start = Column(DateTime)
+    period_end = Column(DateTime)
+    content = Column(Text)
+    metadata_json = Column(Text)  # JSON string with stats at generation time
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    generated_by = Column(String(100), default="system")
+
+
+class FileReport(Base):
+    """Individual reports generated per uploaded CSV file (Level 1)"""
+
+    __tablename__ = "file_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    uploaded_file_id = Column(Integer, ForeignKey("uploaded_files.id"), index=True)
+    filename = Column(String(255))
+    data_type = Column(String(50))
+    # Period extracted from the data
+    period_year = Column(Integer)
+    period_month = Column(Integer, nullable=True)  # None for yearly files
+    # Report content
+    summary = Column(Text)  # AI-generated summary of this file
+    key_metrics = Column(Text)  # JSON: extracted KPIs from this file
+    anomalies = Column(Text)  # JSON: detected issues/anomalies
+    recommendations = Column(Text)  # AI recommendations
+    records_analyzed = Column(Integer)
+    # Status
+    status = Column(String(20), default="pending")  # pending, processing, completed, failed
+    error_message = Column(Text, nullable=True)
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    
+    uploaded_file = relationship("UploadedFile", backref="file_reports")
+
+
+class MonthlyReport(Base):
+    """Monthly aggregated reports (Level 2) - combines multiple FileReports"""
+
+    __tablename__ = "monthly_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer, index=True)
+    month = Column(Integer, index=True)  # 1-12
+    # Content
+    executive_summary = Column(Text)
+    production_analysis = Column(Text)
+    quality_analysis = Column(Text)
+    compliance_analysis = Column(Text)
+    key_metrics = Column(Text)  # JSON: aggregated metrics
+    trends_detected = Column(Text)  # JSON: trends for this month
+    issues_summary = Column(Text)  # JSON: issues found
+    recommendations = Column(Text)
+    # Linked file reports
+    file_report_ids = Column(Text)  # JSON array of FileReport IDs used
+    # Status
+    status = Column(String(20), default="pending")
+    error_message = Column(Text, nullable=True)
+    generated_at = Column(DateTime, default=datetime.utcnow)
+
+
+class APRReport(Base):
+    """Annual Product Review - synthesized from Monthly Reports (Level 3)"""
+
+    __tablename__ = "apr_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    year = Column(Integer, index=True)
+    title = Column(String(255))
+    # Full APR sections
+    executive_summary = Column(Text)
+    production_review = Column(Text)
+    quality_review = Column(Text)
+    complaints_review = Column(Text)
+    capa_review = Column(Text)
+    equipment_review = Column(Text)
+    stability_review = Column(Text)
+    trend_analysis = Column(Text)
+    conclusions = Column(Text)
+    recommendations = Column(Text)
+    # Metadata
+    monthly_report_ids = Column(Text)  # JSON array of MonthlyReport IDs
+    total_batches = Column(Integer)
+    total_complaints = Column(Integer)
+    total_capas = Column(Integer)
+    overall_yield = Column(Float)
+    overall_qc_pass_rate = Column(Float)
+    # Status
+    status = Column(String(20), default="pending")
+    error_message = Column(Text, nullable=True)
+    generated_at = Column(DateTime, default=datetime.utcnow)
+    approved_by = Column(String(100), nullable=True)
+    approved_at = Column(DateTime, nullable=True)

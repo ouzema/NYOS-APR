@@ -38,3 +38,12 @@ node_modules/
 .vite/
 
 apr_data/
+.venv/
+.DS_Store
+Thumbs.db
+*.log
+nohup.out
+frontend/dist/
+.firebase/
+firebase-debug.log
+public/

@@ -4,37 +4,70 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from app import models
 from datetime import datetime, timedelta
+from typing import Optional
 import json
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
 
-def get_data_context(db: Session) -> str:
-    """Build comprehensive context from all data sources"""
-    batches = (
-        db.query(models.Batch)
-        .order_by(models.Batch.manufacturing_date.desc())
-        .limit(50)
-        .all()
-    )
-    qc_results = (
-        db.query(models.QCResult)
-        .order_by(models.QCResult.test_date.desc())
-        .limit(50)
-        .all()
-    )
-    complaints = db.query(models.Complaint).all()
-    capas = db.query(models.CAPA).all()
-    equipment = db.query(models.Equipment).limit(50).all()
+def get_data_context(db: Session, start_date: datetime = None, end_date: datetime = None) -> str:
+    """Build comprehensive context from all data sources with optional date filtering"""
+    
+    # Base queries
+    batch_query = db.query(models.Batch)
+    qc_query = db.query(models.QCResult)
+    complaint_query = db.query(models.Complaint)
+    capa_query = db.query(models.CAPA)
+    equipment_query = db.query(models.Equipment)
+    
+    # Apply date filters if provided
+    if start_date:
+        batch_query = batch_query.filter(models.Batch.manufacturing_date >= start_date)
+        qc_query = qc_query.filter(models.QCResult.test_date >= start_date)
+        complaint_query = complaint_query.filter(models.Complaint.complaint_date >= start_date)
+        capa_query = capa_query.filter(models.CAPA.open_date >= start_date)
+        equipment_query = equipment_query.filter(models.Equipment.actual_date >= start_date)
+    
+    if end_date:
+        batch_query = batch_query.filter(models.Batch.manufacturing_date <= end_date)
+        qc_query = qc_query.filter(models.QCResult.test_date <= end_date)
+        complaint_query = complaint_query.filter(models.Complaint.complaint_date <= end_date)
+        capa_query = capa_query.filter(models.CAPA.open_date <= end_date)
+        equipment_query = equipment_query.filter(models.Equipment.actual_date <= end_date)
+    
+    batches = batch_query.order_by(models.Batch.manufacturing_date.desc()).limit(50).all()
+    qc_results = qc_query.order_by(models.QCResult.test_date.desc()).limit(50).all()
+    complaints = complaint_query.all()
+    capas = capa_query.all()
+    equipment = equipment_query.limit(50).all()
 
     # Calculate statistics
-    total_batches = db.query(models.Batch).count()
-    avg_yield = db.query(func.avg(models.Batch.yield_percent)).scalar() or 0
-    avg_hardness = db.query(func.avg(models.Batch.hardness)).scalar() or 0
+    total_batches = batch_query.count()
+    avg_yield_query = db.query(func.avg(models.Batch.yield_percent))
+    avg_hardness_query = db.query(func.avg(models.Batch.hardness))
+    
+    if start_date:
+        avg_yield_query = avg_yield_query.filter(models.Batch.manufacturing_date >= start_date)
+        avg_hardness_query = avg_hardness_query.filter(models.Batch.manufacturing_date >= start_date)
+    if end_date:
+        avg_yield_query = avg_yield_query.filter(models.Batch.manufacturing_date <= end_date)
+        avg_hardness_query = avg_hardness_query.filter(models.Batch.manufacturing_date <= end_date)
+    
+    avg_yield = avg_yield_query.scalar() or 0
+    avg_hardness = avg_hardness_query.scalar() or 0
+
+    # Build period string
+    period_str = "2020-2025 (6 years of APR data)"
+    if start_date and end_date:
+        period_str = f"{start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}"
+    elif start_date:
+        period_str = f"From {start_date.strftime('%Y-%m-%d')}"
+    elif end_date:
+        period_str = f"Until {end_date.strftime('%Y-%m-%d')}"
 
     context = f"""
 === PHARMACEUTICAL PLANT DATA - PARACETAMOL 500mg ===
-Analysis Period: 2020-2025 (6 years of APR data)
+Analysis Period: {period_str}
 
 GLOBAL STATISTICS:
 - Total batches produced: {total_batches:,}
@@ -210,14 +243,35 @@ async def analyze_trends(db: Session, parameter: str = "hardness", days: int = 3
     }
 
 
-def get_full_stats(db: Session) -> dict:
+def get_full_stats(db: Session, start_date: datetime = None, end_date: datetime = None) -> dict:
     from sqlalchemy import func
 
-    batches = db.query(models.Batch).all()
-    qc_results = db.query(models.QCResult).all()
-    complaints = db.query(models.Complaint).all()
-    capas = db.query(models.CAPA).all()
-    equipment = db.query(models.Equipment).all()
+    # Base queries with optional date filters
+    batch_query = db.query(models.Batch)
+    qc_query = db.query(models.QCResult)
+    complaint_query = db.query(models.Complaint)
+    capa_query = db.query(models.CAPA)
+    equipment_query = db.query(models.Equipment)
+    
+    if start_date:
+        batch_query = batch_query.filter(models.Batch.manufacturing_date >= start_date)
+        qc_query = qc_query.filter(models.QCResult.test_date >= start_date)
+        complaint_query = complaint_query.filter(models.Complaint.complaint_date >= start_date)
+        capa_query = capa_query.filter(models.CAPA.open_date >= start_date)
+        equipment_query = equipment_query.filter(models.Equipment.actual_date >= start_date)
+    
+    if end_date:
+        batch_query = batch_query.filter(models.Batch.manufacturing_date <= end_date)
+        qc_query = qc_query.filter(models.QCResult.test_date <= end_date)
+        complaint_query = complaint_query.filter(models.Complaint.complaint_date <= end_date)
+        capa_query = capa_query.filter(models.CAPA.open_date <= end_date)
+        equipment_query = equipment_query.filter(models.Equipment.actual_date <= end_date)
+
+    batches = batch_query.all()
+    qc_results = qc_query.all()
+    complaints = complaint_query.all()
+    capas = capa_query.all()
+    equipment = equipment_query.all()
 
     # Calculate QC pass rate based on actual pharmaceutical specifications
     # Specs: Assay 95-105%, Dissolution >80%
@@ -256,14 +310,25 @@ def get_full_stats(db: Session) -> dict:
         "qc_pass_rate": (
             round(qc_pass_count / max(len(qc_results), 1) * 100, 1) if qc_results else 0
         ),
+        "qc_total": len(qc_results),
+        "qc_failed": len(qc_results) - qc_pass_count,
         "complaints_by_category": {},
+        "complaints_total": len(complaints),
         "complaints_open": len(
             [c for c in complaints if c.status and c.status.lower() == "open"]
         ),
+        "complaints_closed": len(
+            [c for c in complaints if c.status and c.status.lower() == "closed"]
+        ),
+        "capas_total": len(capas),
         "capas_open": len(
             [c for c in capas if c.status and "closed" not in c.status.lower()]
         ),
+        "capas_closed": len(
+            [c for c in capas if c.status and "closed" in c.status.lower()]
+        ),
         "equipment_due": len([e for e in equipment if e.result == "Fail"]),
+        "equipment_total": len(equipment),
     }
 
     for b in batches:
@@ -335,72 +400,213 @@ SUMMARY:"""
         yield f"data: {json.dumps({'error': str(e)})}\n\n"
 
 
-async def generate_report(db: Session) -> str:
+async def generate_report(db: Session, start_date: datetime = None, end_date: datetime = None, title: str = None) -> dict:
+    """Generate APR report with optional date filtering and return both report and metadata"""
     try:
-        context = get_data_context(db)
-        stats = get_full_stats(db)
+        context = get_data_context(db, start_date, end_date)
+        stats = get_full_stats(db, start_date, end_date)
         model = genai.GenerativeModel("gemini-2.5-flash")
 
-        prompt = f"""You are a pharmaceutical quality expert. Generate a complete and professional APR (Annual Product Review) report.
+        # Build period string for the report
+        if start_date and end_date:
+            period_str = f"{start_date.strftime('%B %d, %Y')} to {end_date.strftime('%B %d, %Y')}"
+            year_str = f"{start_date.year}" if start_date.year == end_date.year else f"{start_date.year}-{end_date.year}"
+            doc_id = f"APR-PARA-500mg-{start_date.year}-{end_date.year}-V1.0"
+        else:
+            period_str = "January 1, 2025 to January 31, 2026"
+            year_str = "2025"
+            doc_id = "APR-PARA-500mg-2025-2026-V1.0"
 
-PLANT DATA:
+        current_date = datetime.now().strftime("%B %d, %Y")
+        
+        prompt = f"""You are a senior pharmaceutical quality expert at NYOS PharmaCo Global. Generate a COMPLETE and PROFESSIONAL Annual Product Review (APR) report.
+
+IMPORTANT INSTRUCTIONS:
+1. DO NOT use placeholder text like "[Plant Name]" - use ACTUAL data provided
+2. Use specific numbers and statistics from the data provided
+3. Format as a professional regulatory document
+4. Include actual analysis and insights, not generic statements
+
+ACTUAL PLANT DATA:
+Manufacturing Site: NYOS PharmaCo Global, Dublin Facility
+Product: Paracetamol 500mg Tablets (PARA-500-TAB)
+Document ID: {doc_id}
+Analysis Period: {period_str}
+Date Prepared: {current_date}
+Prepared By: Quality Assurance Department
+
+ACTUAL STATISTICS FROM DATABASE:
+- Total batches manufactured: {stats['total_batches']}
+- Average batch hardness: {stats['avg_hardness']}N
+- Average batch yield: {stats['avg_yield']}%
+- QC pass rate (annual): {stats['qc_pass_rate']}%
+- Total complaints received: {stats['complaints_open'] + stats.get('complaints_closed', 0)} ({stats['complaints_open']} still open)
+- Total CAPAs: {stats['capas_open'] + stats.get('capas_closed', 0)} ({stats['capas_open']} still open)
+- Equipment requiring calibration: {stats['equipment_due']}
+- Complaints breakdown: {stats['complaints_by_category']}
+- Machine performance data: {stats['machines']}
+
+RAW DATA CONTEXT:
 {context}
 
-STATISTICS:
-- Total batches produced: {stats['total_batches']}
-- Average hardness: {stats['avg_hardness']}N
-- Average yield: {stats['avg_yield']}%
-- QC compliance rate: {stats['qc_pass_rate']}%
-- Open complaints: {stats['complaints_open']}
-- Open CAPAs: {stats['capas_open']}
-- Equipment requiring calibration: {stats['equipment_due']}
-- Complaints by category: {stats['complaints_by_category']}
-- Performance by machine: {stats['machines']}
+Generate the report with this EXACT structure. Fill all sections with REAL data and analysis:
 
-Generate a complete report with these sections:
+---
 
 # ANNUAL PRODUCT REVIEW REPORT (APR)
-## Paracetamol 500mg - Year 2024
 
-### 1. EXECUTIVE SUMMARY
-(Overall status, key conclusions)
+**Paracetamol 500mg Tablets**
 
-### 2. PRODUCTION PERFORMANCE
-- Volumes produced
-- Yields by period and machine
-- Trend analysis
+**Period:** {period_str}
 
-### 3. QUALITY CONTROL
-- Test results (dissolution, assay, hardness, friability)
-- Compliance rate
-- Non-conformities detected
+---
 
-### 4. COMPLAINTS AND CLAIMS
-- Analysis by category
-- Trends
-- Corrective actions
+**Document ID:** {doc_id}
+**Product:** Paracetamol 500mg Tablets (PARA-500-TAB)
+**Manufacturing Site:** NYOS PharmaCo Global, Dublin Facility
+**Analysis Period:** {period_str}
+**Date Prepared:** {current_date}
+**Prepared By:** Quality Assurance Department
 
-### 5. CORRECTIVE AND PREVENTIVE ACTIONS (CAPA)
-- CAPAs initiated
-- Closure status
-- Effectiveness
+---
 
-### 6. EQUIPMENT
-- Calibration status
-- Preventive maintenance
+## 1. EXECUTIVE SUMMARY
 
-### 7. TREND ANALYSIS
-- Identified drifts
-- Weak signals
-- Comparison with previous period
+Write a comprehensive executive summary including:
+- Total batches produced ({stats['total_batches']}) and production volume assessment
+- Overall yield performance ({stats['avg_yield']}%)
+- Quality metrics summary (QC pass rate: {stats['qc_pass_rate']}%)
+- Average hardness ({stats['avg_hardness']}N)
+- Highlight any critical trends or issues found in the data
+- Key conclusions about product quality and process control
 
-### 8. CONCLUSIONS AND RECOMMENDATIONS
-- Decision to maintain/modify process
-- Priority actions for the following year
+If QC pass rate is below 99%, flag this as a concern.
+If there are open complaints or CAPAs, mention the backlog.
 
-Be precise, use numerical data, and format properly in Markdown."""
+## 2. PRODUCTION PERFORMANCE
+
+### 2.1 Volume Summary
+- Provide actual batch counts from data
+- Calculate approximate tablet output (batches × ~100,000 tablets)
+- Assess production consistency
+
+### 2.2 Yield Analysis
+- Average yield: {stats['avg_yield']}%
+- Analyze yield trends by machine if available
+- Identify any batches with yield below 95%
+
+### 2.3 Equipment Utilization
+Analyze the machine performance data: {stats['machines']}
+- Compare performance across tablet presses
+- Identify best and worst performing equipment
+
+## 3. QUALITY CONTROL RESULTS
+
+### 3.1 In-Process Controls
+- Tablet hardness: {stats['avg_hardness']}N (target: 10-15 kp)
+- Friability results
+- Weight variation
+
+### 3.2 Finished Product Testing
+- Assay results (target: 95-105%)
+- Dissolution performance
+- Content uniformity
+- QC pass rate: {stats['qc_pass_rate']}%
+
+Calculate how many batches failed QC based on the pass rate.
+
+### 3.3 Out-of-Specification (OOS) Investigations
+List any OOS events and their root causes.
+
+## 4. CUSTOMER COMPLAINTS
+
+### 4.1 Complaint Summary
+- Total complaints: {stats['complaints_open'] + stats.get('complaints_closed', 0)}
+- Open complaints: {stats['complaints_open']}
+- By category: {stats['complaints_by_category']}
+
+### 4.2 Complaint Analysis
+Analyze the complaint categories and identify the most frequent issue.
+Calculate complaint rate per batch if possible.
+
+### 4.3 Trending
+Compare to industry standards (~0.5-1% complaint rate).
+
+## 5. CAPA MANAGEMENT
+
+### 5.1 CAPA Summary
+- Total CAPAs: {stats['capas_open'] + stats.get('capas_closed', 0)}
+- Open CAPAs: {stats['capas_open']}
+
+### 5.2 CAPA Sources
+Analyze CAPA origins (deviations, complaints, audits).
+
+### 5.3 CAPA Effectiveness
+Comment on closure rate and effectiveness verification.
+
+## 6. EQUIPMENT STATUS
+
+### 6.1 Calibration Status
+- Equipment requiring calibration: {stats['equipment_due']}
+- Flag overdue calibrations as quality risks
+
+### 6.2 Preventive Maintenance
+Comment on PM compliance.
+
+## 7. TREND ANALYSIS
+
+### 7.1 Process Capability Trends
+Analyze trends in yield, hardness, dissolution over time.
+
+### 7.2 Identified Concerns
+List any drifts or weak signals found in the data.
+
+### 7.3 Comparison to Previous Period
+If relevant data available, compare year-over-year.
+
+## 8. CONCLUSIONS
+
+Summarize overall product quality status.
+State whether the process remains in a validated state.
+
+## 9. RECOMMENDATIONS
+
+List specific, actionable recommendations:
+1. If complaints are high - recommend investigation
+2. If CAPAs are open - recommend closure targets  
+3. If equipment overdue - recommend immediate scheduling
+4. Process improvements based on data analysis
+
+---
+
+**Report Approval:**
+
+Prepared by: Quality Assurance Department
+Date: {current_date}
+
+Reviewed by: _____________________
+Date: _________
+
+Approved by: _____________________
+Date: _________
+
+---
+
+Remember: Use ACTUAL numbers from the statistics. Do not use placeholder text. Be specific and data-driven."""
 
         response = model.generate_content(prompt)
-        return response.text
+        report_content = response.text
+        
+        # Return both report and metadata
+        return {
+            "report": report_content,
+            "metadata": {
+                "title": title or f"APR Report - Paracetamol 500mg - {year_str}",
+                "period_start": start_date.isoformat() if start_date else None,
+                "period_end": end_date.isoformat() if end_date else None,
+                "stats": stats,
+                "generated_at": datetime.now().isoformat()
+            }
+        }
     except Exception as e:
-        return f"Error generating report: {str(e)}"
+        return {"report": f"Error generating report: {str(e)}", "metadata": None}

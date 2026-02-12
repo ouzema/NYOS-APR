@@ -20,10 +20,20 @@ export default function Analytics() {
   const [equipment, setEquipment] = useState(null);
   const [comparison, setComparison] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedYears, setSelectedYears] = useState([]);
 
   useEffect(() => {
     loadAllData();
   }, []);
+
+  // Initialize selectedYears when yearly data loads
+  useEffect(() => {
+    if (yearly?.years?.length >= 2) {
+      // Select last 2 years by default
+      const years = yearly.years.map(y => y.year).sort();
+      setSelectedYears(years.slice(-2));
+    }
+  }, [yearly]);
 
   async function loadAllData() {
     setLoading(true);
@@ -379,97 +389,274 @@ export default function Analytics() {
         </div>
       )}
 
-      {/* Comparison Tab */}
-      {activeTab === 'comparison' && comparison && (
+      {/* Comparison Tab - Enhanced Multi-Year */}
+      {activeTab === 'comparison' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Period 1 */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">{comparison.period1?.label}</h3>
-                <span className="text-sm text-gray-500">
-                  {comparison.period1?.start} - {comparison.period1?.end}
-                </span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Batches produced</span>
-                  <span className="font-bold">{comparison.period1?.batches}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Average yield</span>
-                  <span className="font-bold text-green-600">{comparison.period1?.avg_yield}%</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Average hardness</span>
-                  <span className="font-bold">{comparison.period1?.avg_hardness} kp</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Complaints</span>
-                  <span className="font-bold text-orange-600">{comparison.period1?.complaints}</span>
-                </div>
-              </div>
+          {/* Year Selector */}
+          <div className="bg-white rounded-xl p-6 border border-gray-200">
+            <h3 className="font-semibold text-gray-900 mb-4">Select Years to Compare</h3>
+            <div className="flex flex-wrap gap-2">
+              {yearly?.years?.map(y => (
+                <button
+                  key={y.year}
+                  onClick={() => {
+                    const years = selectedYears.includes(y.year)
+                      ? selectedYears.filter(yr => yr !== y.year)
+                      : [...selectedYears, y.year].sort();
+                    setSelectedYears(years);
+                  }}
+                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                    selectedYears.includes(y.year)
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  {y.year}
+                </button>
+              ))}
             </div>
-
-            {/* Period 2 */}
-            <div className="bg-white rounded-xl p-6 border border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold text-gray-900">{comparison.period2?.label}</h3>
-                <span className="text-sm text-gray-500">
-                  {comparison.period2?.start} - {comparison.period2?.end}
-                </span>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Batches produced</span>
-                  <span className="font-bold">{comparison.period2?.batches}</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Average yield</span>
-                  <span className="font-bold text-green-600">{comparison.period2?.avg_yield}%</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Average hardness</span>
-                  <span className="font-bold">{comparison.period2?.avg_hardness} kp</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                  <span>Complaints</span>
-                  <span className="font-bold text-orange-600">{comparison.period2?.complaints}</span>
-                </div>
-              </div>
-            </div>
+            <p className="text-sm text-gray-500 mt-2">Select 2 or more years to compare</p>
           </div>
 
-          {/* Changes Summary */}
-          <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 border border-primary-200">
-            <h3 className="font-semibold text-primary-900 mb-4">Evolution</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${comparison.changes?.batches_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {comparison.changes?.batches_pct >= 0 ? '+' : ''}{comparison.changes?.batches_pct}%
-                </p>
-                <p className="text-sm text-gray-600">Production</p>
+          {/* Multi-Year Comparison Charts */}
+          {selectedYears.length >= 2 && yearly?.years && (
+            <>
+              {/* Comparison Table */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200 overflow-x-auto">
+                <h3 className="font-semibold text-gray-900 mb-4">Detailed Year-over-Year Comparison</h3>
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 font-medium text-gray-500">Metric</th>
+                      {selectedYears.map(year => (
+                        <th key={year} className="text-center py-3 font-medium text-gray-500">{year}</th>
+                      ))}
+                      <th className="text-center py-3 font-medium text-gray-500">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[
+                      { key: 'batches', label: 'Batches Produced', format: v => v?.toLocaleString() },
+                      { key: 'avg_yield', label: 'Average Yield (%)', format: v => v?.toFixed(2) + '%' },
+                      { key: 'complaints', label: 'Complaints', format: v => v },
+                      { key: 'capas', label: 'CAPAs', format: v => v },
+                    ].map(metric => {
+                      const values = selectedYears.map(year => {
+                        const yearData = yearly.years.find(y => y.year === year);
+                        return yearData?.[metric.key] || 0;
+                      });
+                      const trend = values.length >= 2 
+                        ? ((values[values.length - 1] - values[0]) / values[0] * 100).toFixed(1)
+                        : 0;
+                      const trendPositive = metric.key === 'complaints' || metric.key === 'capas'
+                        ? trend < 0
+                        : trend > 0;
+                      
+                      return (
+                        <tr key={metric.key} className="border-b border-gray-100">
+                          <td className="py-3 font-medium">{metric.label}</td>
+                          {values.map((v, i) => (
+                            <td key={i} className="text-center py-3">{metric.format(v)}</td>
+                          ))}
+                          <td className={`text-center py-3 font-medium ${trendPositive ? 'text-green-600' : 'text-red-600'}`}>
+                            {trend > 0 ? '+' : ''}{trend}%
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${comparison.changes?.yield_pct >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {comparison.changes?.yield_pct >= 0 ? '+' : ''}{comparison.changes?.yield_pct}%
-                </p>
-                <p className="text-sm text-gray-600">Yield</p>
+
+              {/* Multi-Year Trend Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Production Volume */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">Production Volume Trend</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={yearly.years.filter(y => selectedYears.includes(y.year))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="year" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                      <Bar dataKey="batches" name="Batches" fill="#2563eb" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Yield Evolution */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">Yield Evolution</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={yearly.years.filter(y => selectedYears.includes(y.year))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="year" stroke="#6b7280" />
+                      <YAxis domain={[90, 100]} stroke="#6b7280" />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                      <Line type="monotone" dataKey="avg_yield" name="Yield %" stroke="#22c55e" strokeWidth={3} dot={{ fill: '#22c55e', r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Quality Issues */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">Quality Issues Trend</h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={yearly.years.filter(y => selectedYears.includes(y.year))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                      <XAxis dataKey="year" stroke="#6b7280" />
+                      <YAxis stroke="#6b7280" />
+                      <Tooltip contentStyle={{ borderRadius: '8px', border: '1px solid #e5e7eb' }} />
+                      <Legend />
+                      <Bar dataKey="complaints" name="Complaints" fill="#f97316" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="capas" name="CAPAs" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* Multi-metric Radar */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                  <h3 className="font-semibold text-gray-900 mb-4">Performance Radar - Latest vs First</h3>
+                  {selectedYears.length >= 2 && (
+                    <ResponsiveContainer width="100%" height={250}>
+                      <RadarChart data={[
+                        { 
+                          metric: 'Yield', 
+                          [selectedYears[0]]: yearly.years.find(y => y.year === selectedYears[0])?.avg_yield || 0,
+                          [selectedYears[selectedYears.length - 1]]: yearly.years.find(y => y.year === selectedYears[selectedYears.length - 1])?.avg_yield || 0,
+                        },
+                        { 
+                          metric: 'Production', 
+                          [selectedYears[0]]: Math.min(100, (yearly.years.find(y => y.year === selectedYears[0])?.batches || 0) / 100),
+                          [selectedYears[selectedYears.length - 1]]: Math.min(100, (yearly.years.find(y => y.year === selectedYears[selectedYears.length - 1])?.batches || 0) / 100),
+                        },
+                        { 
+                          metric: 'Low Complaints', 
+                          [selectedYears[0]]: Math.max(0, 100 - (yearly.years.find(y => y.year === selectedYears[0])?.complaints || 0)),
+                          [selectedYears[selectedYears.length - 1]]: Math.max(0, 100 - (yearly.years.find(y => y.year === selectedYears[selectedYears.length - 1])?.complaints || 0)),
+                        },
+                      ]}>
+                        <PolarGrid />
+                        <PolarAngleAxis dataKey="metric" />
+                        <PolarRadiusAxis angle={30} domain={[0, 100]} />
+                        <Radar name={selectedYears[0]} dataKey={selectedYears[0]} stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.3} />
+                        <Radar name={selectedYears[selectedYears.length - 1]} dataKey={selectedYears[selectedYears.length - 1]} stroke="#2563eb" fill="#2563eb" fillOpacity={0.3} />
+                        <Legend />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  )}
+                </div>
               </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${comparison.changes?.hardness_pct >= 0 ? 'text-blue-600' : 'text-blue-600'}`}>
-                  {comparison.changes?.hardness_pct >= 0 ? '+' : ''}{comparison.changes?.hardness_pct}%
-                </p>
-                <p className="text-sm text-gray-600">Hardness</p>
+
+              {/* Year-over-Year Changes Summary */}
+              <div className="bg-gradient-to-r from-primary-50 to-blue-50 rounded-xl p-6 border border-primary-200">
+                <h3 className="font-semibold text-primary-900 mb-4">
+                  {selectedYears[0]} → {selectedYears[selectedYears.length - 1]} Evolution Summary
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {(() => {
+                    const first = yearly.years.find(y => y.year === selectedYears[0]) || {};
+                    const last = yearly.years.find(y => y.year === selectedYears[selectedYears.length - 1]) || {};
+                    
+                    return [
+                      { 
+                        label: 'Production', 
+                        change: first.batches ? ((last.batches - first.batches) / first.batches * 100).toFixed(1) : 0,
+                        positive: true
+                      },
+                      { 
+                        label: 'Yield', 
+                        change: first.avg_yield ? ((last.avg_yield - first.avg_yield) / first.avg_yield * 100).toFixed(2) : 0,
+                        positive: true
+                      },
+                      { 
+                        label: 'Complaints', 
+                        change: first.complaints ? ((last.complaints - first.complaints) / first.complaints * 100).toFixed(1) : 0,
+                        positive: false
+                      },
+                      { 
+                        label: 'CAPAs', 
+                        change: first.capas ? ((last.capas - first.capas) / first.capas * 100).toFixed(1) : 0,
+                        positive: false
+                      },
+                    ].map((item, i) => (
+                      <div key={i} className="text-center">
+                        <p className={`text-2xl font-bold ${
+                          (item.positive ? parseFloat(item.change) >= 0 : parseFloat(item.change) <= 0) 
+                            ? 'text-green-600' 
+                            : 'text-red-600'
+                        }`}>
+                          {parseFloat(item.change) >= 0 ? '+' : ''}{item.change}%
+                        </p>
+                        <p className="text-sm text-gray-600">{item.label}</p>
+                      </div>
+                    ));
+                  })()}
+                </div>
               </div>
-              <div className="text-center">
-                <p className={`text-2xl font-bold ${comparison.changes?.complaints_pct <= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {comparison.changes?.complaints_pct >= 0 ? '+' : ''}{comparison.changes?.complaints_pct}%
-                </p>
-                <p className="text-sm text-gray-600">Complaints</p>
+            </>
+          )}
+
+          {/* Original 2-period comparison if no years selected */}
+          {selectedYears.length < 2 && comparison && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Period 1 */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">{comparison.period1?.label}</h3>
+                  <span className="text-sm text-gray-500">
+                    {comparison.period1?.start} - {comparison.period1?.end}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Batches produced</span>
+                    <span className="font-bold">{comparison.period1?.batches}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Average yield</span>
+                    <span className="font-bold text-green-600">{comparison.period1?.avg_yield}%</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Average hardness</span>
+                    <span className="font-bold">{comparison.period1?.avg_hardness} kp</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Complaints</span>
+                    <span className="font-bold text-orange-600">{comparison.period1?.complaints}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Period 2 */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-semibold text-gray-900">{comparison.period2?.label}</h3>
+                  <span className="text-sm text-gray-500">
+                    {comparison.period2?.start} - {comparison.period2?.end}
+                  </span>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Batches produced</span>
+                    <span className="font-bold">{comparison.period2?.batches}</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Average yield</span>
+                    <span className="font-bold text-green-600">{comparison.period2?.avg_yield}%</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Average hardness</span>
+                    <span className="font-bold">{comparison.period2?.avg_hardness} kp</span>
+                  </div>
+                  <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span>Complaints</span>
+                    <span className="font-bold text-orange-600">{comparison.period2?.complaints}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

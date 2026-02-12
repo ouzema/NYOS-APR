@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:8000';
+const API_BASE = import.meta.env.PROD ? '' : 'http://localhost:8000';
 
 export const api = {
   // Dashboard & Analytics
@@ -115,8 +115,27 @@ export const api = {
     return eventSource;
   },
 
-  async getReport() {
-    const res = await fetch(`${API_BASE}/chat/report`);
+  async getReport(startDate = null, endDate = null, title = null, save = true) {
+    let url = `${API_BASE}/chat/report?save=${save}`;
+    if (startDate) url += `&start_date=${startDate}`;
+    if (endDate) url += `&end_date=${endDate}`;
+    if (title) url += `&title=${encodeURIComponent(title)}`;
+    const res = await fetch(url);
+    return res.json();
+  },
+
+  async getReportHistory(limit = 20) {
+    const res = await fetch(`${API_BASE}/chat/reports/history?limit=${limit}`);
+    return res.json();
+  },
+
+  async getSavedReport(reportId) {
+    const res = await fetch(`${API_BASE}/chat/reports/${reportId}`);
+    return res.json();
+  },
+
+  async deleteReport(reportId) {
+    const res = await fetch(`${API_BASE}/chat/reports/${reportId}`, { method: 'DELETE' });
     return res.json();
   },
 
@@ -137,6 +156,114 @@ export const api = {
 
   async getUploads() {
     const res = await fetch(`${API_BASE}/data/uploads`);
+    return res.json();
+  },
+
+  // Data Generation Backoffice
+  async getDataTypes() {
+    const res = await fetch(`${API_BASE}/generate/data-types`);
+    return res.json();
+  },
+
+  async previewMonthGeneration(year, month, batchesPerDay = 20, dataTypes = null) {
+    const res = await fetch(`${API_BASE}/generate/month/preview`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year,
+        month,
+        batches_per_day: batchesPerDay,
+        data_types: dataTypes
+      })
+    });
+    return res.json();
+  },
+
+  async downloadMonthData(year, month, batchesPerDay = 20, dataTypes = null) {
+    const res = await fetch(`${API_BASE}/generate/month/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year,
+        month,
+        batches_per_day: batchesPerDay,
+        data_types: dataTypes
+      })
+    });
+    return res.blob();
+  },
+
+  async downloadYearData(year, batchesPerDay = 20, dataTypes = null) {
+    const res = await fetch(`${API_BASE}/generate/year/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        year,
+        batches_per_day: batchesPerDay,
+        data_types: dataTypes
+      })
+    });
+    return res.blob();
+  },
+
+  async downloadCustomData(startDate, endDate, batchesPerDay = 20, dataTypes = null) {
+    const res = await fetch(`${API_BASE}/generate/custom/download`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        start_date: startDate,
+        end_date: endDate,
+        batches_per_day: batchesPerDay,
+        data_types: dataTypes
+      })
+    });
+    return res.blob();
+  },
+
+  async downloadSingleDataType(dataType, year, month, batchesPerDay = 20) {
+    const res = await fetch(
+      `${API_BASE}/generate/single/${dataType}?year=${year}&month=${month}&batches_per_day=${batchesPerDay}`
+    );
+    return res.blob();
+  },
+
+  async getScenarios() {
+    const res = await fetch(`${API_BASE}/generate/scenarios`);
+    return res.json();
+  },
+
+  // APR Report Generation (Hierarchical System)
+  async generateAPR(year, forceRegenerate = false) {
+    const res = await fetch(`${API_BASE}/reports/apr/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ year, force_regenerate: forceRegenerate })
+    });
+    return res.json();
+  },
+
+  async getAPR(year) {
+    const res = await fetch(`${API_BASE}/reports/apr/${year}`);
+    if (!res.ok) return null;
+    return res.json();
+  },
+
+  async downloadAPRPdf(year) {
+    const res = await fetch(`${API_BASE}/reports/apr/${year}/pdf`);
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || 'Failed to download PDF');
+    }
+    return res.blob();
+  },
+
+  async getReportHierarchyStatus(year) {
+    const res = await fetch(`${API_BASE}/reports/hierarchy/${year}`);
+    return res.json();
+  },
+
+  async generateAllReports(year) {
+    const res = await fetch(`${API_BASE}/reports/generate-all/${year}`, { method: 'POST' });
     return res.json();
   }
 };
